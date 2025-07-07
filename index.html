@@ -29,6 +29,7 @@
       overflow: auto;
       font-size: 10px;
       position: relative;
+      cursor: pointer;
     }
     .label {
       position: absolute;
@@ -38,14 +39,51 @@
       font-weight: bold;
       font-size: 10px;
     }
-    label, input {
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 4px;
+      position: relative;
+      max-width: 90vw;
+      max-height: 90vh;
+      overflow: auto;
+      font-size: 12px;
+      font-family: monospace;
+      line-height: 1.1;
+      white-space: pre;
+    }
+    .ruler-on .modal-content {
+      background-image: linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
+      background-size: 10px 10px;
+    }
+    .close-btn {
+      position: absolute;
+      top: 4px;
+      right: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    #toggleRuler {
       margin-top: 1rem;
-      display: block;
     }
   </style>
 </head>
 <body>
   <h1>ASCII Art Post-it Splitter</h1>
+  <button onclick="loadDefault()">Load Default ASCII</button>
   <label for="asciiInput">Paste ASCII Art Below:</label>
   <textarea id="asciiInput"></textarea>
 
@@ -55,7 +93,17 @@
 
   <div id="grid"></div>
 
+  <div id="modal" class="modal" onclick="closeModal(event)">
+    <div id="modalContent" class="modal-content">
+      <span class="close-btn" onclick="closeModal(event)">&times;</span>
+      <pre id="zoomedPanel"></pre>
+      <button id="toggleRuler" onclick="toggleRuler()">Toggle Ruler</button>
+    </div>
+  </div>
+
   <script>
+    let rulerOn = false;
+
     function splitArt() {
       const ascii = document.getElementById("asciiInput").value;
       const rows = parseInt(document.getElementById("rows").value);
@@ -69,7 +117,6 @@
       const cellHeight = Math.floor(totalHeight / rows);
       const cellWidth = Math.floor(totalWidth / cols);
 
-      // Pad lines to equal width
       const padded = lines.map(line => line.padEnd(totalWidth));
 
       grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
@@ -86,18 +133,39 @@
               cellLines.push(line);
             }
           }
+          const label = String.fromCharCode(65 + c) + (r + 1);
           const cellDiv = document.createElement("div");
           cellDiv.className = "cell";
-
-          const label = document.createElement("div");
-          label.className = "label";
-          label.textContent = String.fromCharCode(65 + c) + (r + 1); // A1, B1, ...
-          cellDiv.appendChild(label);
-
-          cellDiv.appendChild(document.createTextNode(cellLines.join("\n")));
+          cellDiv.innerHTML = `<div class='label'>${label}</div>` + cellLines.join("\n");
+          cellDiv.onclick = () => showModal(label, cellLines.join("\n"));
           grid.appendChild(cellDiv);
         }
       }
+    }
+
+    function showModal(label, content) {
+      const modal = document.getElementById("modal");
+      const zoomed = document.getElementById("zoomedPanel");
+      zoomed.textContent = `${label}\n\n` + content;
+      modal.classList.add("show");
+      modal.style.display = "flex";
+    }
+
+    function closeModal(e) {
+      if (e.target.id === "modal" || e.target.classList.contains("close-btn")) {
+        document.getElementById("modal").style.display = "none";
+      }
+    }
+
+    function toggleRuler() {
+      const modalContent = document.getElementById("modalContent");
+      modalContent.classList.toggle("ruler-on");
+      rulerOn = !rulerOn;
+    }
+
+    function loadDefault() {
+      document.getElementById("asciiInput").value = `@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@`;
+      splitArt();
     }
   </script>
 </body>
